@@ -1,0 +1,54 @@
+# Daphne Virlar-Knight; May 25 2022
+# Converting newly added csv to dataTable, adding physical
+
+
+
+## -- load libraries -- ##
+library(dataone)
+library(datapack)
+library(arcticdatautils)
+library(EML)
+
+
+
+## -- general setup -- ##
+# run token in console
+# get nodes
+d1c <- D1Client("PROD", "urn:node:ARCTIC")
+
+# Get the package
+packageId <- "resource_map_urn:uuid:616ff45a-6e49-48e9-9be6-9074d35e433d"
+dp <- getDataPackage(d1c, identifier = packageId, lazyLoad=TRUE, quiet=FALSE)
+
+# Get the metadata id
+xml <- selectMember(dp, name = "sysmeta@fileName", value = ".xml")
+
+# Read in the metadata
+doc <- read_eml(getObject(d1c@mn, xml))
+
+
+
+## -- convert OE to DT -- ##
+doc <- eml_otherEntity_to_dataTable(doc, 1, validate_eml = F)
+
+
+## -- add physical -- ##
+# Add physical to .csv file
+csv_pid <- selectMember(dp, name = "sysmeta@fileName", 
+                        value = "combustion_data.csv")
+csv_phys <- pid_to_eml_physical(d1c@mn, csv_pid)
+
+doc$dataset$dataTable[[3]]$physical <- csv_phys
+
+
+## -- set ration to interval -- ##
+# get atts
+atts <- get_attributes(doc$dataset$dataTable[[3]]$attributeList)
+
+# change lat/long ratio -> interval
+atts_edited <- shiny_attributes(attributes = atts$attributes)
+
+# set attributes back to dataTable
+doc$dataset$dataTable[[3]]$attributeList <- set_attributes(atts_edited$attributes)
+
+eml_validate(doc)
