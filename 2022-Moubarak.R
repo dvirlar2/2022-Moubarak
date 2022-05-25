@@ -63,3 +63,36 @@ doc$dataset$dataTable[[3]]$physical <- csv_phys
 eml_validate(doc)
 
 
+## -- dataset annotations -- ##
+doc <- eml_categorize_dataset(doc, c("Soil Science", "Plant Science"))
+
+
+## -- update package -- ##
+# Write EML
+eml_path <- "~/Scratch/Yukon_Kuskokwim_River_Delta_2015_fire_burn_depth.xml"
+write_eml(doc, eml_path)
+
+
+# change access rules
+myAccessRules <- data.frame(subject="CN=arctic-data-admins,DC=dataone,DC=org",
+                            permission="changePermission")
+
+
+# update
+dp <- replaceMember(dp, xml, replacement=eml_path)
+newPackageId <- uploadDataPackage(d1c, dp, 
+                                  accessRules = myAccessRules,
+                                  public=FALSE, quiet=FALSE)
+
+
+## -- updates PI access -- ##
+subject <- 'http://orcid.org/0000-0003-4276-0609'
+
+
+# get list of current pids
+pids <- arcticdatautils::get_package(d1c@mn, packageId)
+
+set_rights_and_access(d1c@mn,
+                      pids = c(xml, pids$data, packageId),
+                      subject = subject,
+                      permissions = c('read', 'write', 'changePermission'))
