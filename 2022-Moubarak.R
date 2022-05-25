@@ -28,6 +28,25 @@ doc <- read_eml(getObject(d1c@mn, xml))
 
 
 
+## -- edit attributes -- ##
+# running into issues with enumerated domain
+# so, I'm going to save the EDs to reassign after
+veg_marker <- doc$dataset$otherEntity$attributeList$attribute[[3]]$measurementScale
+
+burn_severity <- doc$dataset$otherEntity$attributeList$attribute[[5]]$measurementScale
+
+# change lat/long ratio -> interval
+atts <- get_attributes(doc$dataset$otherEntity$attributeList)
+atts_edited <- shiny_attributes(attributes = atts$attributes)
+doc$dataset$otherEntity$attributeList <- set_attributes(atts_edited$attributes)
+
+# assign EDs back
+doc$dataset$otherEntity$attributeList$attribute[[3]]$measurementScale <- veg_marker
+
+doc$dataset$otherEntity$attributeList$attribute[[5]]$measurementScale <- burn_severity
+
+
+
 ## -- convert OE to DT -- ##
 doc <- eml_otherEntity_to_dataTable(doc, 1, validate_eml = F)
 
@@ -41,14 +60,6 @@ csv_phys <- pid_to_eml_physical(d1c@mn, csv_pid)
 doc$dataset$dataTable[[3]]$physical <- csv_phys
 
 
-## -- set ration to interval -- ##
-# get atts
-atts <- get_attributes(doc$dataset$dataTable[[3]]$attributeList)
-
-# change lat/long ratio -> interval
-atts_edited <- shiny_attributes(attributes = atts$attributes)
-
-# set attributes back to dataTable
-doc$dataset$dataTable[[3]]$attributeList <- set_attributes(atts_edited$attributes)
-
 eml_validate(doc)
+
+
